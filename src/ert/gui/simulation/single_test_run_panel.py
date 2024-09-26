@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Literal
 
 from qtpy import QtCore
 from qtpy.QtWidgets import QFormLayout, QLabel
@@ -10,7 +11,6 @@ from ert.run_models import SingleTestRun
 
 from .experiment_config_panel import ExperimentConfigPanel
 
-from typing import Literal
 
 @dataclass
 class Arguments:

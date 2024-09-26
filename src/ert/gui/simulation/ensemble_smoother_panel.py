@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from pydantic.dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from pydantic.dataclasses import dataclass
 from qtpy.QtCore import Slot
 from qtpy.QtWidgets import QFormLayout, QLabel
 
@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from ert.config import AnalysisConfig
 
 from typing import Literal
+
 
 @dataclass
 class Arguments:

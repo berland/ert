@@ -55,9 +55,9 @@ async def submit_experiment(experiment: Experiment, background_tasks: Background
 async def cancel_experiment(experiment_id: str):
     if experiment_id not in experiments:
         return HTTPException(
-                status_code=404,
-                detail=f"Experiment with id {experiment_id} does not exist.",
-            )
+            status_code=404,
+            detail=f"Experiment with id {experiment_id} does not exist.",
+        )
     task = experiments[experiment_id]
     task.cancel()
     return ExperimentOut(id=experiment_id, type=task.model_type)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from qtpy.QtCore import Slot
 from qtpy.QtWidgets import QFormLayout, QLabel, QSpinBox
@@ -21,8 +21,6 @@ from ert.validation import ProperNameFormatArgument, RangeStringArgument
 from ert.validation.range_string_argument import NotInStorage
 
 from .experiment_config_panel import ExperimentConfigPanel
-
-from typing import Literal
 
 if TYPE_CHECKING:
     from ert.config import AnalysisConfig

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Literal
 
 import numpy as np
 from qtpy import QtCore
@@ -19,7 +20,6 @@ from ert.mode_definitions import MANUAL_UPDATE_MODE
 from ert.run_models.manual_update import ManualUpdate
 from ert.validation import ProperNameFormatArgument, RangeStringArgument
 
-from typing import Literal
 
 @dataclass
 class Arguments:

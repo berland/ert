@@ -1,33 +1,31 @@
 from __future__ import annotations
 
+import json
 import logging
-from contextlib import suppress
-from queue import Empty
 from time import sleep
-from typing import Optional, Annotated
+from typing import Annotated, Optional
 
 from qtpy.QtCore import QObject, Signal, Slot
+from websockets.sync.client import connect
 
 from ert.ensemble_evaluator import (
     EndEvent,
     FullSnapshotEvent,
+    Snapshot,
     SnapshotUpdateEvent,
-    Snapshot
 )
 from ert.gui.model.snapshot import SnapshotModel
 from ert.run_models import StatusEvents
-
-from websockets.sync.client import connect
-
-import json
 
 logger = logging.getLogger(__name__)
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+
 class EventWrapper(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    event: Annotated[StatusEvents, Field(discriminator='event_type')]
+    event: Annotated[StatusEvents, Field(discriminator="event_type")]
+
 
 class EventFetcher(QObject):
     """A worker that emits items put on a queue to qt subscribers."""
@@ -48,7 +46,9 @@ class EventFetcher(QObject):
     @Slot()
     def consume_and_emit(self) -> None:
         logger.debug("tracking...")
-        with connect(f"ws://127.0.0.1:8000/experiments/{self._experiment_id}/events") as websocket:
+        with connect(
+            f"ws://127.0.0.1:8000/experiments/{self._experiment_id}/events"
+        ) as websocket:
             logger.info("Connected")
             while True:
                 try:
@@ -64,14 +64,16 @@ class EventFetcher(QObject):
                     sleep(0.1)
                     continue
 
-                logger.info("Got message %s".format(message))
+                logger.info("Got message %s".format())
                 event_dict = json.loads(message)
                 if "snapshot" in event_dict:
-                    event_dict["snapshot"] =  Snapshot.from_nested_dict(event_dict["snapshot"])
+                    event_dict["snapshot"] = Snapshot.from_nested_dict(
+                        event_dict["snapshot"]
+                    )
                 try:
                     event_wrapper = EventWrapper(event=event_dict)
                 except ValidationError as e:
-                    logger.error("Error when processing event %s".format(str(event_dict)),exc_info=e)
+                    logger.error("Error when processing event %s".format(), exc_info=e)
 
                 event = event_wrapper.event
 

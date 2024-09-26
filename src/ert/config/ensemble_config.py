@@ -82,8 +82,8 @@ class EnsembleConfig:
     response_configs: Dict[str, Union[SummaryConfig, GenDataConfig]] = field(
         default_factory=dict
     )
-    parameter_configs: Dict[str, Union[GenKwConfig, FieldConfig, SurfaceConfig]] = field(
-       default_factory=dict
+    parameter_configs: Dict[str, Union[GenKwConfig, FieldConfig, SurfaceConfig]] = (
+        field(default_factory=dict)
     )
     refcase: Optional[Refcase] = None
     eclbase: Optional[str] = None

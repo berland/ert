@@ -4,6 +4,7 @@ from collections import OrderedDict
 from queue import SimpleQueue
 from typing import TYPE_CHECKING, Any, List, Type
 
+import requests
 from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtGui import QIcon, QStandardItemModel
 from qtpy.QtWidgets import (
@@ -22,7 +23,7 @@ from qtpy.QtWidgets import (
 )
 
 from ert.gui.ertnotifier import ErtNotifier
-from ert.run_models import BaseRunModel, StatusEvents, create_model
+from ert.run_models import BaseRunModel, create_model
 
 from .combobox_with_description import QComboBoxWithDescription
 from .ensemble_experiment_panel import EnsembleExperimentPanel
@@ -34,9 +35,6 @@ from .manual_update_panel import ManualUpdatePanel
 from .multiple_data_assimilation_panel import MultipleDataAssimilationPanel
 from .run_dialog import RunDialog
 from .single_test_run_panel import SingleTestRunPanel
-
-
-import requests
 
 if TYPE_CHECKING:
     from ert.config import ErtConfig
@@ -195,11 +193,19 @@ class ExperimentPanel(QWidget):
         args = self.get_experiment_arguments()
         QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         import dataclasses
-        from pydantic import RootModel
-        from fastapi.encoders import jsonable_encoder
         import json
+
+        from fastapi.encoders import jsonable_encoder
+        from pydantic import RootModel
+
         from ert.config import ErtConfig
-        data = {"args": dataclasses.asdict(args), "ert_config": json.loads(RootModel[ErtConfig](self.config).model_dump_json())}
+
+        data = {
+            "args": dataclasses.asdict(args),
+            "ert_config": json.loads(
+                RootModel[ErtConfig](self.config).model_dump_json()
+            ),
+        }
         try:
             model = create_model(
                 self.config,
@@ -270,8 +276,9 @@ class ExperimentPanel(QWidget):
                         return
                 QApplication.restoreOverrideCursor()
 
-
-        res = requests.post("http://127.0.0.1:8000/experiments/", json=jsonable_encoder(data))
+        res = requests.post(
+            "http://127.0.0.1:8000/experiments/", json=jsonable_encoder(data)
+        )
         experiment_id = res.json()["id"]
         dialog = RunDialog(
             experiment_id,

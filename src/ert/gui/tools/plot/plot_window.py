@@ -98,7 +98,7 @@ class PlotWindow(QMainWindow):
         logger.info("PlotWindow __init__")
         self.setMinimumWidth(850)
         self.setMinimumHeight(650)
-        self.setWindowTitle(f"Plotting")
+        self.setWindowTitle("Plotting")
         self.activateWindow()
         self._preferred_ensemble_x_axis_format = PlotContext.INDEX_AXIS
         QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)

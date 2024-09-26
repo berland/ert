@@ -20,18 +20,18 @@ class _UpdateEvent:
 @dataclass
 class FullSnapshotEvent(_UpdateEvent):
     snapshot: Optional[Snapshot] = None
-    event_type: Literal['FullSnapshotEvent'] = 'FullSnapshotEvent'
+    event_type: Literal["FullSnapshotEvent"] = "FullSnapshotEvent"
 
 
 @dataclass
 class SnapshotUpdateEvent(_UpdateEvent):
     snapshot: Optional[Snapshot] = None
-    event_type: Literal['SnapshotUpdateEvent'] = 'SnapshotUpdateEvent'
+    event_type: Literal["SnapshotUpdateEvent"] = "SnapshotUpdateEvent"
 
 
 @dataclass
 class EndEvent:
     failed: bool
     msg: Optional[str] = None
-    event_type: Literal['EndEvent'] = 'EndEvent'
+    event_type: Literal["EndEvent"] = "EndEvent"
     timestamp: datetime = field(default_factory=datetime.now)

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import contextlib
-import dataclasses
 import json
 import logging
 import os
@@ -107,7 +106,10 @@ def run_cli(args: Namespace, plugin_manager: Optional[ErtPluginManager] = None) 
         args["restart_run"] = False
         args["prior_ensemble_id"] = ""
 
-    data = {"args": args, "ert_config": json.loads(RootModel[ErtConfig](ert_config).model_dump_json())}
+    data = {
+        "args": args,
+        "ert_config": json.loads(RootModel[ErtConfig](ert_config).model_dump_json()),
+    }
     print(json.dumps(jsonable_encoder(data)))
     return
 

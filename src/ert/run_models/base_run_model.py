@@ -34,9 +34,9 @@ from _ert.events import (
 )
 from ert.analysis import (
     AnalysisEvent,
+    AnalysisReportEvent,
     AnalysisStatusEvent,
     AnalysisTimeEvent,
-    AnalysisReportEvent,
     ErtAnalysisError,
     smoother_update,
 )

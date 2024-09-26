@@ -11,12 +11,12 @@ from ert.ensemble_evaluator import EvaluatorServerConfig
 from ert.ensemble_evaluator.event import EndEvent, _UpdateEvent
 from ert.run_models.base_run_model import BaseRunModel, StatusEvents
 
-
 logger = logging.getLogger(__name__)
 
 
 class EndTaskEvent:
     pass
+
 
 class Subscriber:
     def __init__(self) -> None:
@@ -30,8 +30,11 @@ class Subscriber:
         await self._event.wait()
         self._event.clear()
 
+
 class ExperimentTask:
-    def __init__(self, _id: str, model: BaseRunModel, status_queue: "Queue[StatusEvents]" ) -> None:
+    def __init__(
+        self, _id: str, model: BaseRunModel, status_queue: "Queue[StatusEvents]"
+    ) -> None:
         self._id = _id
         self._model = model
         self.model_type = str(model.name())
@@ -54,9 +57,7 @@ class ExperimentTask:
 
         simulation_future = loop.run_in_executor(
             None,
-            lambda: self._model.start_simulations_thread(
-                evaluator_server_config
-            ),
+            lambda: self._model.start_simulations_thread(evaluator_server_config),
         )
 
         while True:

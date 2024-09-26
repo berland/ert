@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Union, Literal
+from typing import Dict, List, Literal, Optional, Union
 
 import pandas as pd
 
@@ -18,7 +18,7 @@ class AnalysisEvent:
 @dataclass
 class AnalysisStatusEvent(AnalysisEvent):
     msg: str
-    event_type: Literal['AnalysisStatusEvent'] = 'AnalysisStatusEvent'
+    event_type: Literal["AnalysisStatusEvent"] = "AnalysisStatusEvent"
     timestamp: datetime = field(default_factory=datetime.now)
 
 
@@ -26,14 +26,14 @@ class AnalysisStatusEvent(AnalysisEvent):
 class AnalysisTimeEvent(AnalysisEvent):
     remaining_time: float
     elapsed_time: float
-    event_type: Literal['AnalysisTimeEvent'] = 'AnalysisTimeEvent'
+    event_type: Literal["AnalysisTimeEvent"] = "AnalysisTimeEvent"
     timestamp: datetime = field(default_factory=datetime.now)
 
 
 @dataclass
 class AnalysisReportEvent(AnalysisEvent):
     report: str
-    event_type: Literal['AnalysisReportEvent'] = 'AnalysisReportEvent'
+    event_type: Literal["AnalysisReportEvent"] = "AnalysisReportEvent"
     timestamp: datetime = field(default_factory=datetime.now)
 
 

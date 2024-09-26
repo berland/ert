@@ -4,7 +4,6 @@ import contextlib
 import io
 import json
 import os
-import signal
 import sys
 import threading
 from logging import Logger, getLogger
@@ -46,7 +45,6 @@ def cleanup_service_files(signum: int, frame: Optional[FrameType]) -> None:
         if file.exists():
             file.unlink()
     raise OSError(f"Signal {signum} received.")
-
 
 
 def local_exec_args(script_args: Union[str, List[str]]) -> List[str]:

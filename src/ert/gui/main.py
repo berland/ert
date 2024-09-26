@@ -79,7 +79,9 @@ def run_gui(args: Namespace, plugin_manager: Optional[ErtPluginManager] = None) 
     return -1
 
 
-def run_run_dialog(args: Namespace, plugin_manager: Optional[ErtPluginManager] = None) -> int:
+def run_run_dialog(
+    args: Namespace, plugin_manager: Optional[ErtPluginManager] = None
+) -> int:
     # Replace Python's exception handler for SIGINT with the system default.
     #
     # Python's SIGINT handler is the one that raises KeyboardInterrupt. This is
@@ -94,13 +96,17 @@ def run_run_dialog(args: Namespace, plugin_manager: Optional[ErtPluginManager] =
     app = QApplication(["ert"])  # Early so that QT is initialized before other imports
     app.setWindowIcon(QIcon("img:ert_icon.svg"))
 
-    from ert.gui.simulation.run_dialog import RunDialog
     from ert.gui.ertnotifier import ErtNotifier
-    window = RunDialog(experiment_id=args.experiment_id, notifier=ErtNotifier(config_file="dummy"))
+    from ert.gui.simulation.run_dialog import RunDialog
+
+    window = RunDialog(
+        experiment_id=args.experiment_id, notifier=ErtNotifier(config_file="dummy")
+    )
     window.run_experiment()
     window.show()
 
     sys.exit(app.exec_())
+
 
 def _start_initial_gui_window(
     args: Namespace,

@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Optional
 
 import requests
-
 from qtpy.QtCore import QModelIndex, QSize, Qt, QThread, QTimer, Signal, Slot
 from qtpy.QtGui import (
     QCloseEvent,
@@ -35,11 +34,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from _ert.threading import ErtThread
-from ert.config import QueueSystem
 from ert.ensemble_evaluator import (
     EndEvent,
-    EvaluatorServerConfig,
     FullSnapshotEvent,
     SnapshotUpdateEvent,
 )
@@ -61,7 +57,6 @@ from ert.run_models import (
     RunModelTimeEvent,
     RunModelUpdateBeginEvent,
     RunModelUpdateEndEvent,
-    StatusEvents,
 )
 from ert.run_models.event import RunModelDataEvent, RunModelErrorEvent
 from ert.shared.status.utils import (
@@ -375,7 +370,9 @@ class RunDialog(QDialog):
             # but the worker is busy tracking the evaluation.
             # self._run_model.cancel()
             ## TODO: Fix cancellation
-            requests.put(f"http://127.0.0.1:8000/experiments/{self._experiment_id}/cancel")
+            requests.put(
+                f"http://127.0.0.1:8000/experiments/{self._experiment_id}/cancel"
+            )
             self._on_finished()
             self.finished.emit(-1)
         return kill_job
