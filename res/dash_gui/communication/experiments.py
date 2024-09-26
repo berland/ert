@@ -7,6 +7,13 @@ from websockets.sync.client import connect
 
 pool = ThreadPoolExecutor()
 
+DATA = {}
+
+def get_data():
+    return DATA
+
+def set_data( data):
+    DATA = data
 
 # Function to fetch data from the REST server
 def fetch_experiments_data():
@@ -16,7 +23,6 @@ def fetch_experiments_data():
         if response.status_code == 200:
             # Assuming the response is a JSON list of experiments
             experiments = response.json()
-            print(experiments)
             return experiments
         else:
             print(f"Failed to fetch data, status code: {response.status_code}")

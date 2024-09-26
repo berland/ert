@@ -5,12 +5,13 @@ import dash
 import dash_bootstrap_components as dbc
 import dash_table
 import pandas as pd
-from communication.experiments import fetch_experiments_data
+from communication.experiments import fetch_experiments_data, get_data, set_data
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
 
 # Initialize the Dash app with a Bootstrap theme
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
+old_id = None
 global ws_messages
 ws_messages = []  # Clear the global message log after displaying
 
@@ -100,8 +101,11 @@ def update_table(n_clicks, n_intervals):
 # WebSocket client handling function
 def on_message(ws, message):
     global ws_messages
-    ws_messages.append(json.loads(message))
-    print(f"WebSocket message received: {message}")
+    x = json.loads(message)
+    ws_messages.append(x)
+    if x['event_type'] == "EndEvent":
+        ws.close()
+    print(f"WebSocket message received: {x['event_type']}")
 
 
 def on_error(ws, error):
@@ -136,19 +140,23 @@ def start_websocket(experiment_id):
     [State("websocket-events", "children")],
 )
 def connect_to_websocket(selected_experiment_id, n_intervals, existing_logs):
-    if n_intervals:
+    data = get_data()
+    old_id = data.get("selected_experiment_id", None)
+    if selected_experiment_id and selected_experiment_id["row_id"] == old_id:
         global ws_messages
         new_logs = "\n".join([json.dumps(msg) for msg in ws_messages])
         ws_messages = []  # Clear the global message log after displaying
         return (existing_logs or "") + "\n" + new_logs
 
-    elif selected_experiment_id:
+    elif selected_experiment_id and selected_experiment_id["row_id"] != old_id:
+        data["selected_experiment_id"] = selected_experiment_id["row_id"]
+        set_data(data)
         # Start WebSocket connection in a new thread
         ws_thread = threading.Thread(
             target=start_websocket, args=(selected_experiment_id["row_id"],)
         )
         ws_thread.start()
-        return existing_logs or "Listening for WebSocket events..."
+        return "Listening for WebSocket events..."
     return "Select an experiment to start listening for events."
 
 
