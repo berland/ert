@@ -73,7 +73,7 @@ def killed_by_oom(pids: set[int]) -> bool:
 
 
 class Job:
-    MEMORY_POLL_PERIOD = 5  # Seconds between memory polls
+    MEMORY_POLL_PERIOD = 1  # Seconds between memory polls
 
     def __init__(self, job_data, index, sleep_interval=1):
         self.sleep_interval = sleep_interval
