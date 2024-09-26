@@ -1,10 +1,10 @@
 import dash
+import dash_bootstrap_components as dbc
+import dash_table
+import pandas as pd
+from communication.experiments import fetch_experiments_data
 from dash import dcc, html
 from dash.dependencies import Input, Output
-import dash_table
-import requests
-import pandas as pd
-import dash_bootstrap_components as dbc
 
 # Initialize the Dash app with a Bootstrap theme
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
@@ -68,23 +68,6 @@ app.layout = dbc.Container(
     fluid=True,  # Make the container fluid for responsiveness
     className="p-4",  # Padding around the entire app
 )
-
-
-# Function to fetch data from the REST server
-def fetch_experiments_data() -> list[dict]:
-    url = "http://0.0.0.0:8000/experiments"
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            # Assuming the response is a JSON list of experiments
-            experiments = response.json()
-            print(experiments)
-            return experiments
-        print(f"Failed to fetch data, status code: {response.status_code}")
-        return []
-    except Exception as e:
-        print(f"Error fetching data: {e}")
-        return []
 
 
 # Callback to update the table with new data
