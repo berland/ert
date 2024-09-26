@@ -1,6 +1,11 @@
+from concurrent.futures import ThreadPoolExecutor
+from queue import Queue
+
 import orjson
 import requests
 from websockets.sync.client import connect
+
+pool = ThreadPoolExecutor()
 
 
 # Function to fetch data from the REST server
@@ -23,10 +28,17 @@ def fetch_experiments_data():
 
 def fetch_events(experiment_id):
     url = f"ws://127.0.0.1:8000/experiments/{experiment_id}/events"
+    msg_list = Queue()
+    pool.submit(_fetch_events, url, msg_list)
+    return msg_list
+
+
+def _fetch_events(url, queue):
     with connect(url) as ws:
         while True:
             raw_msg = ws.recv()
             msg = orjson.loads(raw_msg)
+            queue.put(msg)
             print(msg)
             if msg["event_type"] == "EndEvent":
                 break
