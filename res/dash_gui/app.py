@@ -39,7 +39,7 @@ app.layout = dbc.Container(
                     id="experiments-table",
                     columns=[
                         {"name": i, "id": i}
-                        for i in ["id", "type", "name", "description"]
+                        for i in ["id", "type"]
                     ],
                     data=[],  # Initially empty
                     style_table={"overflowX": "auto"},
