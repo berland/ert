@@ -5,6 +5,7 @@ import dash
 import dash_bootstrap_components as dbc
 import dash_table
 import pandas as pd
+import plotly.express as px
 import websocket
 from communication.experiments import fetch_experiments_data
 from dash import dcc, html
@@ -65,6 +66,7 @@ app.layout = dbc.Container(
                 width=12,
             )
         ),
+        dcc.Graph(id="memory-profile"),
         dbc.Row(
             dbc.Col(
                 html.Div(
@@ -119,7 +121,6 @@ def event_to_row(event: dict, experiment_id):
 def update_table(n_clicks, n_intervals):
     global dataframe_rows
     data = fetch_experiments_data()
-    print(pd.DataFrame(dataframe_rows))
     if data:
         # Convert to DataFrame and return as dict records
         df = pd.DataFrame(data)
@@ -160,6 +161,22 @@ def start_websocket(experiment_id):
     )
     ws.on_open = on_open
     ws.run_forever()
+
+
+@app.callback(
+    Output("memory-profile", "figure"),
+    Input("interval-component", "n_intervals"),
+)
+def update_graph(value):
+    global dataframe_rows
+    global FM_STATES
+    global old_id
+    FM_STATES = pd.DataFrame(dataframe_rows)
+    print(FM_STATES)
+    dff = FM_STATES[FM_STATES.experiment_id == old_id].reset_index()
+    print(value)
+    print(dff)
+    return px.line(dff, x="index", y="current_memory_usage")
 
 
 # Callback to handle the selected experiment and start WebSocket connection
