@@ -1,3 +1,4 @@
+import orjson
 import requests
 from websockets.sync.client import connect
 
@@ -24,7 +25,11 @@ def fetch_events(experiment_id):
     url = f"ws://127.0.0.1:8000/experiments/{experiment_id}/events"
     with connect(url) as ws:
         while True:
-            print(ws.recv())
+            raw_msg = ws.recv()
+            msg = orjson.loads(raw_msg)
+            print(msg)
+            if msg["event_type"] == "EndEvent":
+                break
 
 
 fetch_events("d28e1957-d7b0-4abd-b88a-cc69036c257b")
