@@ -201,23 +201,24 @@ will *only* delete the link, and not the target.
 
 class Eclipse100(ForwardModelStepPlugin):
     def __init__(self) -> None:
+        e100_config_file = os.getenv(
+            "ECL100_SITE_CONFIG", default="somewhere/ecl100_config.yml"
+        )
         super().__init__(
             name="ECLIPSE100",
             command=[
-                str(
-                    (
-                        Path(__file__)
-                        / "../../../resources/forward-models/res/script/ecl100.py"
-                    ).resolve()
-                ),
-                "<ECLBASE>",
+                "eclrun",
+                "eclipse",  # aka "e100"
                 "-v",
                 "<VERSION>",
-                "-n",
-                "<NUM_CPU>",
-                "<OPTS>",
             ],
-            default_mapping={"<NUM_CPU>": 1, "<OPTS>": ""},
+            exec_env={
+                **(
+                    yaml.safe_load(Path(e100_config_file).read_text(encoding="utf-8"))[
+                        "eclrun_env"
+                    ]
+                )
+            },
         )
 
     def validate_pre_experiment(self, _: ForwardModelStepJSON) -> None:
@@ -262,20 +263,12 @@ class Eclipse300(ForwardModelStepPlugin):
         super().__init__(
             name="ECLIPSE300",
             command=[
-                str(
-                    (
-                        Path(__file__)
-                        / "../../../resources/forward-models/res/script/ecl300.py"
-                    ).resolve()
-                ),
-                "<ECLBASE>",
+                "eclrun",
+                "e300",
                 "-v",
                 "<VERSION>",
-                "-n",
-                "<NUM_CPU>",
-                "<OPTS>",
+                "<ECLBASE>",
             ],
-            default_mapping={"<NUM_CPU>": 1, "<OPTS>": "", "<VERSION>": "version"},
         )
 
     def validate_pre_experiment(self, _: ForwardModelStepJSON) -> None:
