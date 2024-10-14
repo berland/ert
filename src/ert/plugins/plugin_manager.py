@@ -124,21 +124,6 @@ class ErtPluginManager(pluggy.PluginManager):
 
         return response.data
 
-    def get_ecl100_config_path(self) -> Optional[str]:
-        return ErtPluginManager._evaluate_config_hook(
-            hook=self.hook.ecl100_config_path, config_name="ecl100"
-        )
-
-    def get_ecl300_config_path(self) -> Optional[str]:
-        return ErtPluginManager._evaluate_config_hook(
-            hook=self.hook.ecl300_config_path, config_name="ecl300"
-        )
-
-    def get_flow_config_path(self) -> Optional[str]:
-        return ErtPluginManager._evaluate_config_hook(
-            hook=self.hook.flow_config_path, config_name="flow"
-        )
-
     def _site_config_lines(self) -> List[str]:
         try:
             plugin_responses = self.hook.site_config_lines()
@@ -165,18 +150,6 @@ class ErtPluginManager(pluggy.PluginManager):
 
     def get_site_config_content(self) -> str:
         site_config_lines = self._site_config_lines()
-
-        config_env_vars = {
-            "ECL100_SITE_CONFIG": self.get_ecl100_config_path(),
-            "ECL300_SITE_CONFIG": self.get_ecl300_config_path(),
-            "FLOW_SITE_CONFIG": self.get_flow_config_path(),
-        }
-        config_lines = [
-            f"SETENV {env_var} {env_value}"
-            for env_var, env_value in config_env_vars.items()
-            if env_value is not None
-        ]
-        site_config_lines.extend([*config_lines, ""])
 
         install_job_lines = [
             f"INSTALL_JOB {job_name} {job_path}"

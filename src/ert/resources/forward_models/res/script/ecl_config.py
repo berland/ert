@@ -133,6 +133,8 @@ class EclConfig:
         return _replace_env(env)
 
     def _get_sim(self, version: Optional[str], exe_type: str) -> Simulator:
+        print(version)
+        print(exe_type)
         version = self._get_version(version)
         binaries: Dict[str, str] = self._config[Keys.versions][version][exe_type]
         mpirun = binaries[Keys.mpirun] if exe_type == Keys.mpi else None

@@ -356,7 +356,7 @@ class EclRun:
     def _get_run_command(self, eclrun_config: EclrunConfig):
         summary_conversion = "yes" if self.summary_conversion else "no"
         return [
-            "eclrun",
+            Path(os.getenv("PATH_TO_ECLRUN", "")) / "eclrun",
             "-v",
             eclrun_config.version,
             eclrun_config.simulator_name,
