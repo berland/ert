@@ -3,7 +3,6 @@ import logging
 import logging.config
 import os
 import pathlib
-import time
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any
@@ -14,12 +13,9 @@ from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapProp
 from ert.logging import LOGGING_CONFIG
 from ert.plugins.plugin_manager import ErtPluginManager
 from ert.services import ErtClient, ErtServerController, ErtServerExit
-from ert.storage import ExperimentStatus
-from ert.storage.local_experiment import ExperimentState
 from ert.trace import tracer
 from ert.utils import makedirs_if_needed
 from everest.config import ServerConfig
-from everest.detached import get_experiments
 from everest.strings import (
     DEFAULT_LOGGING_FORMAT,
     OPTIMIZATION_LOG_DIR,
@@ -149,20 +145,10 @@ def main() -> None:
             ) as server:
                 server.fetch_connection_info()
                 client = ErtClient.get_client(Path(server_path))
-                done = False
-                while not done:
-                    experiment_ids = get_experiments(
-                        ServerConfig.get_server_context_from_conn_info(client.conn_info)
-                    )
-                    active = [
-                        ExperimentStatus(
-                            **client.experiment_status(experiment_id)
-                        ).status
-                        in {ExperimentState.pending, ExperimentState.running}
-                        for experiment_id in experiment_ids
-                    ]
-                    done = experiment_ids and not any(active)
-                    time.sleep(0.5)
+                # Blocks until the server reports that every experiment it
+                # is running has reached a final state, instead of polling
+                # its status endpoints in a loop.
+                client.wait_until_all_experiments_done()
         except ErtServerExit:
             # Server exit, happens on normal shutdown and keyboard interrupt
             logging.getLogger(__name__).info("Everserver stopped by user")

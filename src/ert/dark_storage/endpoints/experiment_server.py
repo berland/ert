@@ -38,11 +38,8 @@ from ert.ensemble_evaluator.snapshot import EnsembleSnapshot
 from ert.plugins import get_site_plugins
 from ert.run_models import StatusEvents
 from ert.run_models.everest_run_model import EverestExitCode, EverestRunModel
+from ert.storage import ExperimentState, ExperimentStatus
 from everest.config import EverestConfig
-from everest.detached.everserver import (
-    ExperimentState,
-    ExperimentStatus,
-)
 from everest.strings import (
     OPT_FAILURE_ALL_REALIZATIONS,
     OPT_FAILURE_REALIZATIONS,
@@ -80,6 +77,28 @@ def _get_experiment(experiment_id: str) -> ExperimentRunnerState:
             status_code=404, detail=f"Experiment '{experiment_id}' not found"
         )
     return _experiments[experiment_id]
+
+
+def all_experiments_done() -> bool:
+    """Return True once at least one experiment has been registered and none
+    of the registered experiments are pending or still running.
+    """
+    if not _experiments:
+        return False
+    return all(
+        experiment.status.status
+        not in {ExperimentState.pending, ExperimentState.running}
+        for experiment in _experiments.values()
+    )
+
+
+async def wait_until_all_experiments_done(poll_interval: float = 0.5) -> None:
+    """Block until :func:`all_experiments_done` returns True."""
+    # Polling instead of an asyncio.Event since experiment status is set from
+    # several places (ExperimentRunner, the /stop endpoint); wiring an event
+    # through all of them is left for when there is a need for it.
+    while not all_experiments_done():  # ruff: ignore[async-busy-wait]
+        await asyncio.sleep(poll_interval)
 
 
 def _failed_realizations_messages(
@@ -184,6 +203,18 @@ def experiment_status(
 @router.get("/" + EverEndpoints.EXPERIMENTS, dependencies=authenticated)
 def experiments() -> JSONResponse:
     return JSONResponse({"experiment_ids": list(_experiments.keys())})
+
+
+@router.get("/" + EverEndpoints.WAIT_UNTIL_DONE, dependencies=authenticated)
+async def wait_until_done() -> Response:
+    """Block until every experiment tracked by this server has reached a
+    final state, then respond.
+
+    Intended for a single caller (currently ``everserver``) to be notified
+    when it is safe to shut this server down, instead of polling for status.
+    """
+    await wait_until_all_experiments_done()
+    return Response("All experiments done", status_code=200)
 
 
 @router.post("/" + EverEndpoints.STOP, dependencies=authenticated)

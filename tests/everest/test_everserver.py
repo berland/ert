@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import threading
+import time
 from base64 import b64encode
 from dataclasses import dataclass
 from pathlib import Path
@@ -23,7 +25,7 @@ from ert.ensemble_evaluator import EndEvent
 from ert.run_models.event import StatusEvents
 from ert.scheduler.event import FinishedEvent
 from ert.services import ErtClient
-from ert.storage import ExperimentState
+from ert.storage import ExperimentState, ExperimentStatus
 from everest.bin.utils import get_experiment_status
 from everest.config import EverestConfig, ServerConfig
 from everest.detached import (
@@ -517,3 +519,49 @@ def test_that_experiment_stop_endpoint_correctly_shuts_down_server(setup_client)
         assert handler.call_args_list[0].args[0] == SIGTERM
     finally:
         signal(SIGTERM, previous_handler)
+
+
+def test_that_wait_until_done_endpoint_returns_immediately_when_already_done(
+    setup_client,
+):
+    client, _, experiment_id = setup_client()
+    _experiments[experiment_id].status = ExperimentStatus(
+        status=ExperimentState.completed
+    )
+    credentials = b64encode(b"username:password").decode()
+
+    response = client.get(
+        "/experiment_server/wait_until_done",
+        headers={"Authorization": f"Basic {credentials}"},
+    )
+
+    assert response.status_code == 200
+
+
+def test_that_wait_until_done_endpoint_blocks_until_experiment_reaches_final_status(
+    setup_client,
+):
+    client, _, experiment_id = setup_client()
+    _experiments[experiment_id].status = ExperimentStatus(
+        status=ExperimentState.running
+    )
+    credentials = b64encode(b"username:password").decode()
+
+    def _finish_experiment_shortly():
+        time.sleep(0.2)
+        _experiments[experiment_id].status = ExperimentStatus(
+            status=ExperimentState.completed
+        )
+
+    finisher = threading.Thread(target=_finish_experiment_shortly)
+    finisher.start()
+    start_time = time.monotonic()
+    response = client.get(
+        "/experiment_server/wait_until_done",
+        headers={"Authorization": f"Basic {credentials}"},
+    )
+    finisher.join()
+    elapsed = time.monotonic() - start_time
+
+    assert response.status_code == 200
+    assert elapsed >= 0.2

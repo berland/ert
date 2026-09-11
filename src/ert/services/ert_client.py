@@ -255,6 +255,23 @@ class ErtClient:
     def stop_experiment_server(self) -> None:
         _checked(self._request("POST", f"{_EXPERIMENT_SERVER}/stop", auth=self._auth))
 
+    def wait_until_all_experiments_done(self, timeout: float | None = None) -> None:
+        """Block until every experiment on the server has reached a final
+        state.
+
+        Unlike other requests made through this client, this call is
+        expected to block for a long time (as long as an experiment takes to
+        run), so it bypasses the client's default request timeout.
+        """
+        _checked(
+            self._request(
+                "GET",
+                f"{_EXPERIMENT_SERVER}/wait_until_done",
+                auth=self._auth,
+                timeout=timeout,
+            )
+        )
+
     def runpath_exists(self, paths: list[str]) -> bool:
         response = self._request(
             "POST",

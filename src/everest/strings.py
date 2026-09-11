@@ -28,3 +28,4 @@ class EverEndpoints(StrEnum):
     STATUS = auto()
     EVENTS = auto()
     RUNPATH = auto()
+    WAIT_UNTIL_DONE = auto()
