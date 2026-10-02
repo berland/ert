@@ -1517,9 +1517,15 @@ class ErtConfig(BaseModel, extra="forbid"):
 
     @classmethod
     def _log_custom_forward_model_steps(cls, user_config: ConfigDict) -> None:
+        active_fm_step_names = {
+            fm_step_description[0]
+            for fm_step_description in user_config.get(ConfigKeys.FORWARD_MODEL, [])
+        }
         for fm_step, (fm_step_filename, _) in user_config.get(
             ConfigKeys.INSTALL_JOB, []
         ):
+            if fm_step not in active_fm_step_names:
+                continue
             fm_configuration = EMPTY_LINES.sub(
                 "\n", (Path(fm_step_filename).read_text(encoding="utf-8").strip())
             )

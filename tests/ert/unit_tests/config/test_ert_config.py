@@ -172,7 +172,8 @@ def test_custom_forward_models_are_logged(caplog):
         f"-- A comment\n   \nEXECUTABLE {localhack}\n\n\n", encoding="utf-8"
     )
     Path("config.ert").write_text(
-        "NUM_REALIZATIONS 1\nINSTALL_JOB foo_fm foo_fm", encoding="utf-8"
+        "NUM_REALIZATIONS 1\nINSTALL_JOB foo_fm foo_fm\nFORWARD_MODEL foo_fm",
+        encoding="utf-8",
     )
     with caplog.at_level(logging.INFO):
         ErtConfig.from_file("config.ert")
@@ -184,6 +185,24 @@ def test_custom_forward_models_are_logged(caplog):
         sum("Custom forward_model_step" in logmessage for logmessage in caplog.messages)
         == 1
     ), "check if site-config fm were logged"
+
+
+@pytest.mark.usefixtures("use_tmpdir")
+def test_that_inactive_custom_forward_model_steps_are_not_logged(caplog):
+    localhack = Path("localhack.sh")
+    localhack.write_text("", encoding="utf-8")
+    localhack.chmod(localhack.stat().st_mode | stat.S_IEXEC)
+    Path("foo_fm").write_text(
+        f"-- A comment\n   \nEXECUTABLE {localhack}\n\n\n", encoding="utf-8"
+    )
+    Path("config.ert").write_text(
+        "NUM_REALIZATIONS 1\nINSTALL_JOB foo_fm foo_fm", encoding="utf-8"
+    )
+    with caplog.at_level(logging.INFO):
+        ErtConfig.from_file("config.ert")
+    assert not any(
+        "Custom forward_model_step" in logmessage for logmessage in caplog.messages
+    ), "unused forward model steps should not be logged"
 
 
 def test_logging_with_comments(caplog):
