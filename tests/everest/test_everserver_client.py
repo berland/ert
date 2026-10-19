@@ -1,4 +1,3 @@
-import logging
 import os
 import stat
 import sys
@@ -56,7 +55,7 @@ async def test_https_requests(change_to_tmpdir):
     everest_config.write_to_file("config.yml")
 
     makedirs_if_needed(Path(everest_config.output_dir), roll_if_exists=True)
-    await start_server(everest_config, logging_level=logging.INFO)
+    await start_server(everest_config)
 
     client = ErtClient.get_client(
         Path(ServerConfig.get_session_dir(everest_config.output_dir)), 240
@@ -371,7 +370,7 @@ if __name__ == "__main__":
     )
     everserver_path.chmod(everserver_path.stat().st_mode | stat.S_IEXEC)
     makedirs_if_needed(Path(everest_config.output_dir), roll_if_exists=True)
-    driver = await start_server(everest_config, logging_level=logging.DEBUG)
+    driver = await start_server(everest_config)
     final_state = await server_running()
     assert final_state.returncode == 0
 
