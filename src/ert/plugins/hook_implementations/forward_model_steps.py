@@ -542,6 +542,53 @@ If the target directory already exists, it will be replaced.
         )
 
 
+class LowerRealizationMemory(ForwardModelStepPlugin):
+    def __init__(self) -> None:
+        super().__init__(
+            name="LOWER_REALIZATION_MEMORY",
+            command=[
+                str(
+                    (
+                        Path(__file__)
+                        / "../../../resources/forward_models"
+                        / "lower_realization_memory.py"
+                    ).resolve()
+                ),
+                "<MEMORY>",
+            ],
+        )
+
+    @staticmethod
+    def documentation() -> ForwardModelStepDocumentation | None:
+        return ForwardModelStepDocumentation(
+            category="utility.queue_system",
+            description="""
+Lowers the memory reserved in the LSF queue system for the running realization
+to :code:`<MEMORY>`, using :code:`bmod`. This frees memory on the compute node
+for other jobs when later forward model steps need less memory than earlier ones.
+
+The memory values must be strictly decreasing through the forward model
+sequence, starting from :code:`REALIZATION_MEMORY`, which must be set. This
+is checked when the configuration is loaded. :code:`<MEMORY>` uses the same
+format as :code:`REALIZATION_MEMORY`, for example :code:`8Gb`.
+
+The step only has an effect with the LSF queue system. With other queue
+systems it does nothing, and a warning is given when the configuration is
+loaded. If :code:`bmod` fails, a message is written to stderr and the
+realization continues with the memory it had.
+""",
+            examples="""
+.. code-block:: bash
+
+    REALIZATION_MEMORY 32Gb
+    FORWARD_MODEL FLOW
+    FORWARD_MODEL LOWER_REALIZATION_MEMORY(<MEMORY>=4Gb)
+    FORWARD_MODEL TEMPLATE_RENDER(<INPUT_FILES>=my_input.json, \
+        <TEMPLATE_FILE>=tmpl.jinja, <OUTPUT_FILE>=output_file)
+""",
+        )
+
+
 class Symlink(ForwardModelStepPlugin):
     def __init__(self) -> None:
         super().__init__(
@@ -651,6 +698,7 @@ _UpperCaseFMSteps: list[type[ForwardModelStepPlugin]] = [
     MakeSymlink,
     MoveFile,
     MoveDirectory,
+    LowerRealizationMemory,
     Symlink,
     TemplateRender,
 ]

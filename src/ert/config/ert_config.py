@@ -57,6 +57,7 @@ from .parsing import (
     ForwardModelStepKeys,
     HookRuntime,
     ObservationConfigError,
+    QueueSystem,
     init_forward_model_schema,
     init_user_config_schema,
     parse_contents,
@@ -64,7 +65,7 @@ from .parsing import (
 )
 from .parsing.file_context_token import FileContextToken
 from .parsing.observations_parser import ObservationDict
-from .queue_config import KnownQueueOptions, QueueConfig
+from .queue_config import KnownQueueOptions, QueueConfig, parse_string_to_bytes
 from .rft_config import RFTConfig
 from .workflow import Workflow
 from .workflow_fixtures import fixtures_per_hook
@@ -687,6 +688,7 @@ def create_list_of_forward_model_steps_to_run(
     config_dict: ConfigDict,
     preinstalled_forward_model_steps: Mapping[str, SiteInstalledForwardModelStep],
     env_pr_fm_step: dict[str, dict[str, Any]],
+    queue_config: QueueConfig | None = None,
 ) -> list[SiteOrUserForwardModelStep]:
     errors = []
     fm_steps: list[SiteOrUserForwardModelStep] = []
@@ -805,10 +807,68 @@ def create_list_of_forward_model_steps_to_run(
                 )
     dm_validator.validate_design_matrix_merge()
 
+    if queue_config is not None:
+        errors.extend(
+            _validate_realization_memory_step_downs(fm_steps, substituter, queue_config)
+        )
+
     if errors:
         raise ConfigValidationError.from_collected(errors)
 
     return fm_steps
+
+
+def _validate_realization_memory_step_downs(
+    fm_steps: list[SiteOrUserForwardModelStep],
+    substituter: Substitutions,
+    queue_config: QueueConfig,
+) -> list[ConfigValidationError]:
+    step_downs = [
+        fm_step for fm_step in fm_steps if fm_step.name == "LOWER_REALIZATION_MEMORY"
+    ]
+    if not step_downs:
+        return []
+
+    if queue_config.queue_system != QueueSystem.LSF:
+        ConfigWarning.warn(
+            "LOWER_REALIZATION_MEMORY only has an effect with the LSF queue system, "
+            f"it will do nothing with {queue_config.queue_system}",
+            context=step_downs[0].name,
+        )
+
+    previous_memory = queue_config.queue_options.realization_memory
+    if previous_memory == 0:
+        return [
+            ConfigValidationError.with_context(
+                "LOWER_REALIZATION_MEMORY requires REALIZATION_MEMORY to be set "
+                "to a positive value, as the memory can only be stepped down",
+                step_downs[0].name,
+            )
+        ]
+
+    real_iter_substituter = substituter.real_iter_substituter(0, 0)
+    errors: list[ConfigValidationError] = []
+    for fm_step in step_downs:
+        raw_memory = fm_step.private_args.get("<MEMORY>")
+        if raw_memory is None:
+            continue
+        try:
+            memory = parse_string_to_bytes(real_iter_substituter.substitute(raw_memory))
+        except ConfigValidationError as err:
+            errors.append(err)
+            continue
+        if memory <= 0 or memory >= previous_memory:
+            errors.append(
+                ConfigValidationError.with_context(
+                    "LOWER_REALIZATION_MEMORY must be positive and strictly less than "
+                    f"the memory before it ({previous_memory} bytes), "
+                    f"got {raw_memory!s} ({memory} bytes)",
+                    raw_memory,
+                )
+            )
+            continue
+        previous_memory = memory
+    return errors
 
 
 def log_shape_registry(shape_registry: ShapeRegistry) -> None:
@@ -1281,6 +1341,7 @@ class ErtConfig(BaseModel, extra="forbid"):
                     installed_forward_model_steps,
                     substitutions,
                     config_dict,
+                    queue_config,
                 ),
                 runpath_config=model_config,
                 user_config_file=str(config_file_path),
@@ -1377,6 +1438,7 @@ class ErtConfig(BaseModel, extra="forbid"):
         installed_steps: dict[str, SiteOrUserForwardModelStep],
         substitutions: dict[str, str],
         config_dict: ConfigDict,
+        queue_config: QueueConfig,
     ) -> list[SiteOrUserForwardModelStep]:
         return create_list_of_forward_model_steps_to_run(
             installed_steps,
@@ -1384,6 +1446,7 @@ class ErtConfig(BaseModel, extra="forbid"):
             config_dict,
             cls.PREINSTALLED_FORWARD_MODEL_STEPS,
             cls.ENV_PR_FM_STEP,
+            queue_config,
         )
 
     @classmethod

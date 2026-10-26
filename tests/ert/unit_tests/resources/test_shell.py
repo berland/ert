@@ -22,6 +22,16 @@ symlink = import_from_location(
     SHELL_SCRIPTS / "symlink.py",
 ).symlink
 
+lower_realization_memory = import_from_location(
+    "lower_realization_memory",
+    SOURCE_DIR
+    / "src"
+    / "ert"
+    / "resources"
+    / "forward_models"
+    / "lower_realization_memory.py",
+).lower_realization_memory
+
 careful_copy_file = import_from_location(
     "careful_copy",
     SHELL_SCRIPTS / "careful_copy_file.py",
@@ -605,3 +615,25 @@ def test_shell_script_fmstep_names(minimal_case):
             found_jobs.add(wf_name)
 
     assert len(shell_job_names) == len(found_jobs)
+
+
+def test_that_lower_realization_memory_calls_bmod_with_memory_in_megabytes(
+    monkeypatch, capsys
+):
+    monkeypatch.setenv("LSB_JOBID", "123")
+    monkeypatch.setattr(shutil, "which", lambda _: "/usr/bin/bmod")
+    with patch("subprocess.run") as run:
+        run.return_value.returncode = 0
+        run.return_value.stdout = ""
+        run.return_value.stderr = ""
+        lower_realization_memory("8Gb")
+
+    assert run.call_args.args[0] == ["/usr/bin/bmod", "-R", "rusage[mem=8192]", "123"]
+
+
+def test_that_lower_realization_memory_does_nothing_outside_lsf(monkeypatch):
+    monkeypatch.delenv("LSB_JOBID", raising=False)
+    with patch("subprocess.run") as run:
+        lower_realization_memory("8Gb")
+
+    run.assert_not_called()

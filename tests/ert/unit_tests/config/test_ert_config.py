@@ -1517,6 +1517,61 @@ def test_validate_no_logs_when_overwriting_with_same_value(caplog):
     assert ("'<VAR2>': {'private_arg':") not in caplog.text
 
 
+def _config_with_memory_step_downs(*memories: str, realization_memory: str = "32Gb"):
+    steps = "\n".join(
+        f"FORWARD_MODEL LOWER_REALIZATION_MEMORY(<MEMORY>={memory})"
+        for memory in memories
+    )
+    return ErtConfig.with_plugins(get_site_plugins()).from_file_contents(
+        "NUM_REALIZATIONS 1\n"
+        "QUEUE_SYSTEM LSF\n"
+        f"REALIZATION_MEMORY {realization_memory}\n"
+        f"{steps}\n"
+    )
+
+
+def test_that_decreasing_realization_memory_steps_are_accepted():
+    config = _config_with_memory_step_downs("16Gb", "8Gb", "4096Mb")
+
+    assert [step.name for step in config.forward_model_steps] == [
+        "LOWER_REALIZATION_MEMORY"
+    ] * 3
+
+
+@pytest.mark.parametrize(
+    "memories",
+    [
+        pytest.param(["32Gb"], id="equal_to_realization_memory"),
+        pytest.param(["16Gb", "16Gb"], id="equal_to_previous_step"),
+        pytest.param(["8Gb", "16Gb"], id="increasing"),
+        pytest.param(["0"], id="zero"),
+    ],
+)
+def test_that_non_decreasing_realization_memory_steps_give_error(memories):
+    with pytest.raises(
+        ConfigValidationError,
+        match="must be positive and strictly less than the memory before it",
+    ):
+        _config_with_memory_step_downs(*memories)
+
+
+def test_that_realization_memory_step_down_requires_realization_memory():
+    with pytest.raises(
+        ConfigValidationError, match="requires REALIZATION_MEMORY to be set"
+    ):
+        _config_with_memory_step_downs("1Gb", realization_memory="0")
+
+
+def test_that_realization_memory_step_down_warns_when_queue_system_is_not_lsf():
+    with pytest.warns(ConfigWarning, match="only has an effect with the LSF"):
+        ErtConfig.with_plugins(get_site_plugins()).from_file_contents(
+            "NUM_REALIZATIONS 1\n"
+            "QUEUE_SYSTEM LOCAL\n"
+            "REALIZATION_MEMORY 32Gb\n"
+            "FORWARD_MODEL LOWER_REALIZATION_MEMORY(<MEMORY>=8Gb)\n"
+        )
+
+
 def test_that_unresolved_forward_model_placeholders_are_logged_at_startup(caplog):
     class FM(ForwardModelStepPlugin):
         def __init__(self) -> None:
