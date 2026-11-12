@@ -51,7 +51,7 @@ class SharedClient:
         self._client: Client = client
 
     @classmethod
-    def get_client(
+    def get_client_instance(
         cls, project: PathLike[str], timeout: int | None = None
     ) -> SharedClient:
         key = Path(project).resolve()

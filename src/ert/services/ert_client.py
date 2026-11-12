@@ -153,7 +153,8 @@ class ErtClient:
             ErtClient: An instance of the ErtClient connected to the specified project.
         """
         return cls(
-            SharedClient.get_client(project, connect_timeout), timeout=request_timeout
+            SharedClient.get_client_instance(project, connect_timeout),
+            timeout=request_timeout,
         )
 
     @property
